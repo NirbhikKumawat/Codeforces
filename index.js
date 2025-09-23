@@ -51,14 +51,29 @@ app.get('/users/:handle',async (req, res) => {
     try{
         const handle = req.params.handle;
         const response = await fetch(`https://codeforces.com/api/user.info?handles=${req.params.handle}`);
+        if(!response.ok){
+            return res.status(404).send('Failed to fetch from codeforces API');
+        }
         const apiResponse = await response.json();
+        if(apiResponse.status!== 'OK'){
+            return res.status(404).json({
+                success: false,
+                error: 'Error from codeforces API,maybe the handle does not exist'
+            })
+        }
         const db_update = await pool.query(`UPDATE handles SET currentrating=$1,maxrating=$2 WHERE handlename=$3`,[apiResponse.result[0].rating,apiResponse.result[0].maxRating,apiResponse.result[0].handle]);
+        if(db_update.rowCount ===0){
+            return res.status(404).json({
+                success: false,
+                error: 'Error updating user,maybe the user is not in the database',
+            })
+        }
+
         const db_response = await pool.query(`SELECT * FROM  handles WHERE handlename=$1`, [handle]);
         console.log(db_update);
         res.json({
             success:true,
             data: db_response.rows,
-            data2: apiResponse,
         })
     }catch(err){
         console.error('Error fetching user');
