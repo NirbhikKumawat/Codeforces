@@ -38,3 +38,15 @@ pool.connect((err,client,release)=>{
 app.listen(port, () => {
     console.log(`Listening on ${port}`);
 })
+
+app.get('/user/:username',async (req, res) => {
+    try{
+        const username = req.params.username;
+        const response = await fetch(`https://codeforces.com/api/user.info?handles=${req.params.username}`);
+        const data = await response.json();
+        res.json(data);
+    }catch(err){
+        console.error('Error fetching user');
+        res.status(500).send('Error fetching the user');
+    }
+})
