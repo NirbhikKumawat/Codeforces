@@ -35,10 +35,6 @@ pool.connect((err,client,release)=>{
     release();
 })
 
-app.listen(port, () => {
-    console.log(`Listening on ${port}`);
-})
-
 app.get('/user/:username',async (req, res) => {
     try{
         const username = req.params.username;
@@ -50,3 +46,25 @@ app.get('/user/:username',async (req, res) => {
         res.status(500).send('Error fetching the user');
     }
 })
+
+app.get('/users/:handle',async (req, res) => {
+    try{
+        const handle = req.params.handle;
+        const response = await fetch(`https://codeforces.com/api/user.info?handles=${req.params.handle}`);
+        const apiResponse = await response.json();
+        const db_update = await pool.query(`UPDATE handles SET currentrating=$1,maxrating=$2 WHERE handlename=$3`,[apiResponse.result[0].rating,apiResponse.result[0].maxRating,apiResponse.result[0].handle]);
+        const db_response = await pool.query(`SELECT * FROM  handles WHERE handlename=$1`, [handle]);
+        console.log(db_update);
+        res.json({
+            success:true,
+            data: db_response.rows,
+            data2: apiResponse,
+        })
+    }catch(err){
+        console.error('Error fetching user');
+    }
+})
+app.listen(port, () => {
+    console.log(`Listening on ${port}`);
+})
+
