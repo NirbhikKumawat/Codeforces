@@ -79,6 +79,40 @@ app.get('/users/:handle',async (req, res) => {
         console.error('Error fetching user');
     }
 })
+
+app.get('/adduser/:handle/name/:username',async (req, res) => {
+    try{
+        const handle = req.params.handle;
+        const username = req.params.username;
+        const response = await fetch(`https://codeforces.com/api/user.info?handles=${req.params.handle}`);
+        if(!response.ok){
+            return res.status(404).send('Failed to fetch from codeforces API');
+        }
+        const apiResponse = await response.json();
+        if(apiResponse.status!== 'OK'){
+            return res.status(404).json({
+                success: false,
+                error: 'Error from codeforces API,maybe the handle does not exist'
+            })
+        }
+        const db_insert = await pool.query(`INSERT INTO handles (studentname,handlename,currentrating,maxrating) VALUES ($1,$2,$3,$4)`,[req.params.username,apiResponse.result[0].handle,apiResponse.result[0].rating,apiResponse.result[0].maxRating]);
+        if(db_insert.rowCount ===0){
+            return res.status(404).json({
+                success: false,
+                error: 'Error adding the user,maybe the handle does not exist'
+            })
+        }
+        const db_response1 = await pool.query(`SELECT * FROM  handles WHERE handlename=$1`, [handle]);
+        const db_response2 = await pool.query(`SELECT * FROM  handles WHERE studentname=$1`, [req.params.username]);
+        res.json({
+            success:true,
+            message:"Successfully added the user",
+        })
+    }catch(err){
+        console.error('Error fetching user');
+    }
+})
+
 app.listen(port, () => {
     console.log(`Listening on ${port}`);
 })
