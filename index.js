@@ -143,6 +143,21 @@ app.get('/deluser/:handle',async (req, res) => {
     }
 })
 
+app.get('/allusers',async (req, res) => {
+    const db_fetch = await pool.query(`SELECT * FROM handles`);
+    if(db_fetch.rowCount ===0){
+        return res.status(404).json({
+            success: false,
+            error: 'Database is empty.You need to add users to track them.Like this who will I track'
+        })
+    }
+    res.json({
+        success:true,
+        data:db_fetch.rows,
+        count:db_fetch.rowCount
+    })
+})
+
 app.listen(port, () => {
     console.log(`Listening on ${port}`);
 })
