@@ -113,6 +113,36 @@ app.get('/adduser/:handle/name/:username',async (req, res) => {
     }
 })
 
+app.get('/deluser/:handle',async (req, res) => {
+    try{
+        const handle = req.params.handle;
+        const response = await fetch(`https://codeforces.com/api/user.info?handles=${req.params.handle}`);
+        if(!response.ok){
+            return res.status(404).send('Failed to fetch from codeforces API');
+        }
+        const apiResponse = await response.json();
+        if(apiResponse.status!== 'OK'){
+            return res.status(404).json({
+                success: false,
+                error: 'Error from codeforces API,maybe the handle does not exist'
+            })
+        }
+        const db_delete = await pool.query(`DELETE FROM  handles WHERE handlename=$1`, [handle]);
+        if(db_delete.rowCount ===0){
+            return res.status(404).json({
+                success: false,
+                error: 'Error deleting the user,maybe the handle does not exist in the database',
+            })
+        }
+        res.json({
+            success:true,
+            message:"Successfully deleted the user",
+        })
+    }catch(err){
+        console.error('Error fetching user');
+    }
+})
+
 app.listen(port, () => {
     console.log(`Listening on ${port}`);
 })
